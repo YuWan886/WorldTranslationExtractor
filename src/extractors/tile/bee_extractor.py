@@ -10,7 +10,7 @@ from amulet.api.entity import Entity
 class BeeExtractor(TileExtractor):
     extractor_name = 'bee'
     match_tiles = ('beehive', 'bee_nest')
-    data_version_range = (2225, 3953)
+    data_version_range = (2225, 510000)
 
     def __init__(self, settings: Settings) -> None:
         self.entity_extractors = [x(settings) for x in settings.extractors[ExtractorPass.ENTITY]]

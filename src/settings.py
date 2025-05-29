@@ -36,7 +36,7 @@ class Settings:
         self.batch = 0
         self.indent = 0
         self.data_version = 0
-        self.versionless = False
+        self.versionless = True
 
     def from_args(args: Namespace, data_version: int) -> Self:
         s = Settings()
@@ -50,7 +50,7 @@ class Settings:
 
         s.out_lang = args.lang
         try:
-            with open(s.out_lang, 'w') as f:
+            with open(s.out_lang, 'w', encoding='utf-8') as f:
                 if not f.writable():
                     raise Exception
         except Exception:

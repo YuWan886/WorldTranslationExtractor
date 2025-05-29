@@ -13,7 +13,7 @@ class ItemTileExtractor(TileExtractor):
         'lectern': 'Book',
         'decorated_pot': 'item'
     }
-    data_version_range = (819, 3953)
+    data_version_range = (819, 6666)
 
     def __init__(self, settings: Settings) -> None:
         self.item_extractors = [x(settings) for x in settings.extractors[ExtractorPass.ITEM]]

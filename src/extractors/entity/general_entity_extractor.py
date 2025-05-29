@@ -11,7 +11,7 @@ from amulet.api.entity import Entity
 class GeneralEntityExtractor(EntityExtractor):
     extractor_name = 'entity'
     match_entities = ('.*',)
-    data_version_range = (169, 3953)
+    data_version_range = (169, 510000)
 
     def __init__(self, settings: Settings) -> None:
         self.indexes = defaultdict(lambda: 1)

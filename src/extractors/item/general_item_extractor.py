@@ -8,12 +8,12 @@ from collections import defaultdict
 
 from amulet.api.block_entity import BlockEntity
 from amulet.api.entity import Entity
-from amulet_nbt import NamedTag
+from amulet_nbt import NamedTag, CompoundTag, StringTag
 
 class GeneralItemExtractor(ItemExtractor):
     extractor_name = 'item'
     match_items = ('.*',)
-    data_version_range = (3953, 3953)
+    data_version_range = (819, 6666)
 
     def __init__(self, settings: Settings) -> None:
         self.indexes = defaultdict(lambda: 1)
@@ -38,8 +38,11 @@ class GeneralItemExtractor(ItemExtractor):
 
         if 'minecraft:lore' in item['components']:
             for line in range(len(item['components']['minecraft:lore'])):
-                item['components']['minecraft:lore'][line], n = dictionary.replace_component(item['components']['minecraft:lore'][line], f'item.{base_name}.{self.indexes[base_name]}.lore.line{line}')
-                count += n
+                lore_entry = item['components']['minecraft:lore'][line]
+                if isinstance(lore_entry, CompoundTag) and 'text' in lore_entry:
+                    new_text, n = dictionary.replace_component(lore_entry['text'], f'item.{base_name}.{self.indexes[base_name]}.lore.line{line}')
+                    item['components']['minecraft:lore'][line] = CompoundTag({'text': StringTag(new_text)})
+                    count += n
 
         if count:
             self.indexes[base_name] += 1
@@ -49,9 +52,9 @@ class GeneralItemExtractor(ItemExtractor):
             tile = BlockEntity(namespace, base_name, 0, 0, 0, item['components']['minecraft:block_entity_data'])
             count += handle_tile(tile, dictionary, self.tile_extractors)
 
-        if 'minecraft:container' in item['components']: # What the fuck????
-            for useless_wrapper_that_only_helps_make_the_format_inconsistent_with_actual_containers in item['components']['minecraft:container']:
-                inner_item = useless_wrapper_that_only_helps_make_the_format_inconsistent_with_actual_containers['item']
+        if 'minecraft:container' in item['components']:
+            for container_item in item['components']['minecraft:container']:
+                inner_item = container_item['item']
                 count += handle_item(inner_item, dictionary, self.item_extractors)
 
         if 'minecraft:entity_data' in item['components']:

@@ -123,7 +123,7 @@ def handle_text_files(path: str, dictionary: Dictionary, extractors: list):
             name, ext = os.path.splitext(os.path.basename(f))
             parsed_path = os.path.normpath(f.removeprefix(path)).split(os.sep)[2:-1] + [name]
         if any_nsc(extractor.extract(dictionary, (parsed_path, lines)) for extractor in extractors if any(re.fullmatch(p, os.path.basename(f)) for p in extractor.match_filenames)):
-            with open(f, 'w') as fd:
+            with open(f, 'w', encoding='utf-8') as fd:
                 fd.writelines(lines)
 
 def handle_item(item: NamedTag, dictionary: Dictionary, extractors: list) -> int:
@@ -148,9 +148,18 @@ def extract(world: World, settings: 'Settings') -> None:
         print(_('Extracting from text files...'))
         handle_text_files(world.path, dictionary, extractors[ExtractorPass.TEXT_FILE])
 
+    def convert_stringtag(obj):
+        if isinstance(obj, dict):
+            return {k: convert_stringtag(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_stringtag(v) for v in obj]
+        elif hasattr(obj, 'value'):  # Handle StringTag and similar objects
+            return str(obj.value)
+        return obj
+
     print(_('Outputting lang to \'{}\'...').format(settings.out_lang))
-    lang = dictionary.reverse()
-    with open(settings.out_lang, 'w') as f:
+    lang = convert_stringtag(dictionary.reverse())
+    with open(settings.out_lang, 'w', encoding='utf-8') as f:
         json.dump(lang, f, indent=settings.indent, sort_keys=settings.sort)
 
     print(_('Done!'))
