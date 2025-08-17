@@ -109,19 +109,32 @@ def handle_structures(path: str, dictionary: Dictionary, extractors: dict[Extrac
 
 def handle_data_files(path: str, dictionary: Dictionary, extractors: list):
     for f in glob(path + '/**/*.dat', recursive=True):
-        data = nbt.load(f)
-        if any_nsc(extractor.extract(dictionary, data) for extractor in extractors if any(re.fullmatch(p, os.path.basename(f)) for p in extractor.match_filenames)):
-            data.save_to(f)
+        try:
+            data = nbt.load(f)
+            if any_nsc(extractor.extract(dictionary, data) for extractor in extractors if any(re.fullmatch(p, os.path.basename(f)) for p in extractor.match_filenames)):
+                data.save_to(f)
+        except nbt.NBTFormatError as e:
+            print(f"Warning: Skipping corrupted NBT file {f}: {str(e)}")
+            continue
 
 def handle_text_files(path: str, dictionary: Dictionary, extractors: list):
     for f in it.chain(
         glob(path + '/datapacks/*/data/*/*/**/*.mcfunction', recursive=True),
         glob(path + '/datapacks/*/data/*/*/**/*.json', recursive=True)
     ):
-        with open(f, 'r', encoding="utf8") as fd:
-            lines = fd.readlines()
-            name, ext = os.path.splitext(os.path.basename(f))
-            parsed_path = os.path.normpath(f.removeprefix(path)).split(os.sep)[2:-1] + [name]
+        try:
+            with open(f, 'r', encoding="utf8") as fd:
+                lines = fd.readlines()
+        except UnicodeDecodeError:
+            try:
+                with open(f, 'r', encoding="gbk") as fd:
+                    lines = fd.readlines()
+            except UnicodeDecodeError:
+                with open(f, 'rb') as fd:
+                    lines = [line.decode('utf-8', errors='replace') for line in fd]
+        
+        name, ext = os.path.splitext(os.path.basename(f))
+        parsed_path = os.path.normpath(f.removeprefix(path)).split(os.sep)[2:-1] + [name]
         if any_nsc(extractor.extract(dictionary, (parsed_path, lines)) for extractor in extractors if any(re.fullmatch(p, os.path.basename(f)) for p in extractor.match_filenames)):
             with open(f, 'w', encoding='utf-8') as fd:
                 fd.writelines(lines)
@@ -148,17 +161,8 @@ def extract(world: World, settings: 'Settings') -> None:
         print(_('Extracting from text files...'))
         handle_text_files(world.path, dictionary, extractors[ExtractorPass.TEXT_FILE])
 
-    def convert_stringtag(obj):
-        if isinstance(obj, dict):
-            return {k: convert_stringtag(v) for k, v in obj.items()}
-        elif isinstance(obj, list):
-            return [convert_stringtag(v) for v in obj]
-        elif hasattr(obj, 'value'):  # Handle StringTag and similar objects
-            return str(obj.value)
-        return obj
-
     print(_('Outputting lang to \'{}\'...').format(settings.out_lang))
-    lang = convert_stringtag(dictionary.reverse())
+    lang = dictionary.reverse()
     with open(settings.out_lang, 'w', encoding='utf-8') as f:
         json.dump(lang, f, indent=settings.indent, sort_keys=settings.sort)
 

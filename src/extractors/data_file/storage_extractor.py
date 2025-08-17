@@ -1,28 +1,15 @@
 from extractors.data_file_extractor import DataFileExtractor
 from dictionary import Dictionary
-import logging
 
 from amulet_nbt import NamedTag, CompoundTag, ListTag, StringTag
 
-# 配置日志
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 class StorageExtractor(DataFileExtractor):
     extractor_name = 'storage'
-    match_filenames = (r'command_storage_.*\.dat',)
-    data_version_range = (1, 5000)
+    match_filenames = ('command_storage_.*\.dat',)
+    data_version_range = (1, 5333)
 
     def extract(self, dictionary: Dictionary, data: NamedTag) -> int:
         count = 0
-
-        # 检查 data 和 contents 是否存在且为 CompoundTag
-        if 'data' not in data or not isinstance(data['data'], CompoundTag):
-            logger.warning("无效的数据结构：'data' 标签缺失或不是 CompoundTag")
-            return 0
-        if 'contents' not in data['data'] or not isinstance(data['data']['contents'], CompoundTag):
-            logger.warning("无效的数据结构：'contents' 标签缺失或不是 CompoundTag")
-            return 0
 
         for storage_name in data['data']['contents']:
             stack = [data['data']['contents'][storage_name]]

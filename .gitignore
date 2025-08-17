@@ -154,4 +154,4 @@ cython_debug/
 
 # WTE
 wte_lang.json
-
+*.pyc
